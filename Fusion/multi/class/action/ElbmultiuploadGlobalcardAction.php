@@ -1,0 +1,97 @@
+<?php
+/* Copyright (C) 2019-2019 Elb Solutions - Milos Petkovic <milos.petkovic@elb-solutions.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+include_once DOL_DOCUMENT_ROOT.'/ecm/class/ecmfiles.class.php';
+
+class ElbmultiuploadGlobalcardAction
+{
+    /**
+     * Method renames file name
+     *
+     * @return array
+     * @throws Exception
+     */
+    static function rename_file()
+    {
+        if(!defined("DO_AJAX_ACTION")) exit;
+
+        global $db, $user;
+
+        // start transaction
+        $db->begin();
+
+        // initiate ajax action
+        $elbAjax = new ElbAjax();
+        $elbAjax->start();
+
+        // get params sent via ajax
+        $file_id = $elbAjax->getParam('file_id');
+        $file_ext = $elbAjax->getParam('file_ext');
+        $new_file_name = $elbAjax->getParam('new_file_name');
+
+        $error = 0;
+
+        $oldFile = new ELbFile($db);
+        $oldFile->fetch($file_id);
+
+        if (strlen($new_file_name) > 0) {
+            $result = ElbCommonManager::updateField('elb_file', 'name', $new_file_name.$file_ext, $file_id);
+            if (!$result) {
+                $error++;
+            }
+        } else {
+            $error++;
+        }
+
+        // add js code (destroy ajax window on submit comment)
+        $elbAjax->addCode(' $("#elb-ajax-dlg").dialog("destroy"); ');
+        $elbAjax->addCode('setTimeout(function(){location.reload()},10);');
+
+        $newFile = new ELbFile($db);
+        $newFile->fetch($file_id);
+        if($oldFile !== $newFile) {
+            $fm = new ELbFileMapping($db);
+            $fm->fetchByFileID($file_id);
+        }
+
+        //Update fullpath_orig in ecmfiles
+	    $ecmfile = $newFile->getEcmfileFromUploadedFile();
+		if($ecmfile === false) {
+		    $error++;
+	    } else {
+	        $ecmfile->fullpath_orig = $new_file_name.$file_ext;
+		    $resultecm = $ecmfile->update($user);
+		    if($resultecm < 0) {
+			    $error++;
+		    }
+	    }
+
+        // close transaction
+        (!$error) ? $db->commit() : $db->rollback();
+
+        // set event result message
+        elb_common_action_result(!$error);
+
+        // show event result message
+        $elbAjax->showMessages();
+
+        // execute js code
+        $ret = $elbAjax->getResponse();
+
+        return $ret;
+    }
+}

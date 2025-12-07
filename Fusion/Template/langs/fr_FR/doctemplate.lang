@@ -1,0 +1,48 @@
+# Copyright (C) 2020 Office Admin
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#
+# Générique
+#
+
+# Module label 'ModuleDoctemplateName'
+ModuleDoctemplateName = Doctemplate
+# Module description 'ModuleDoctemplateDesc'
+ModuleDoctemplateDesc = Description de Doctemplate
+
+#
+# Page d'administration
+#
+DoctemplateSetup = Configuration du module Doctemplate
+Settings = Réglages
+DoctemplateSetupPage = Page de configuration du module Doctemplate
+
+#
+# Page À propos
+#
+About = À propos
+DoctemplateAbout = À propos de Doctemplate
+DoctemplateAboutPage = Page à propos de Doctemplate
+
+#
+# Page d'exemple
+#
+MyPageName = Nom de ma page
+
+#
+# Box d'exemple
+#
+MyWidget = Mon widget
+MyWidgetDescription = Description de mon widget
