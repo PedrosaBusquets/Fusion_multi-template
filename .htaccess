@@ -1,0 +1,2 @@
+RewriteEngine on
+RewriteRule ^$ /htdocs/ [R=301,L]
