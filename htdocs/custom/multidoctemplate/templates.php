@@ -1,307 +1,281 @@
 <?php
-/* Copyright (C) 2024
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+/* Copyright ...
+ * GPL v3+ ...
  */
 
 /**
- * \file       templates.php
- * \brief      Template management page for user groups
+ *  \file       htdocs/custom/multidoctemplate/templates.php
+ *  \ingroup    multidoctemplate
+ *  \brief      Templates management page (MultiDocTemplate)
  */
 
-// Load Dolibarr environment
-$res = 0;
-// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"]."/main.inc.php";
-}
-// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
-$tmp2 = realpath(__FILE__);
-$i = strlen($tmp) - 1;
-$j = strlen($tmp2) - 1;
-while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-    $i--;
-    $j--;
-}
-if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1))."/main.inc.php")) {
-    $res = @include substr($tmp, 0, ($i + 1))."/main.inc.php";
-}
-if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php")) {
-    $res = @include dirname(substr($tmp, 0, ($i + 1)))."/main.inc.php";
-}
-// Try main.inc.php using relative path
-if (!$res && file_exists("../main.inc.php")) {
-    $res = @include "../main.inc.php";
-}
-if (!$res && file_exists("../../main.inc.php")) {
-    $res = @include "../../main.inc.php";
-}
-if (!$res) {
-    die("Include of main fails");
-}
-require_once DOL_DOCUMENT_ROOT.'/user/class/usergroup.class.php';
-require_once DOL_DOCUMENT_ROOT.'/core/lib/usergroups.lib.php';
-require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
-require_once DOL_DOCUMENT_ROOT.'/core/class/html.formfile.class.php';
+require '../config.php'; // Adapt path if needed (e.g. ../../main.inc.php)
+if (!defined('NOREQUIREDB'))     define('NOREQUIREDB', '0');
+if (!defined('NOREQUIREUSER'))   define('NOREQUIREUSER', '0');
+if (!defined('NOREQUIRESOC'))    define('NOREQUIRESOC', '0');
+if (!defined('NOREQUIRETRAN'))   define('NOREQUIRETRAN', '0');
+if (!defined('NOCSRFCHECK'))     define('NOCSRFCHECK', '0');
+if (!defined('NOREQUIREMENU'))   define('NOREQUIREMENU', '0');
+if (!defined('NOREQUIREHTML'))   define('NOREQUIREHTML', '0');
+if (!defined('NOREQUIREAJAX'))   define('NOREQUIREAJAX', '0');
+
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
-require_once __DIR__.'/class/template.class.php';
-
-// Load translations
-$langs->loadLangs(array('users', 'multidoctemplate@multidoctemplate'));
-
-// Get parameters
-$id = GETPOST('id', 'int');
-$action = GETPOST('action', 'aZ09');
-$confirm = GETPOST('confirm', 'alpha');
-$template_id = GETPOST('template_id', 'int');
 
 // Security check
-if (!$user->hasRight('multidoctemplate', 'template_voir')) {
+if (!isset($user->rights->multidoctemplate->read)) {
+    accessforbidden();
+}
+if (empty($user->rights->multidoctemplate->read)) {
     accessforbidden();
 }
 
-// Initialize objects
-$object = new UserGroup($db);
-$template = new MultiDocTemplate($db);
+$langs->loadLangs(array('multidoctemplate@multidoctemplate', 'companies', 'users'));
+
+// Parameters
+$action           = GETPOST('action', 'alpha');
+$token            = GETPOST('token', 'alpha');
+$search_template  = trim(GETPOST('search_template', 'alpha'));
+$search_tag       = trim(GETPOST('search_tag', 'alpha'));
+$sortfield        = GETPOST('sortfield', 'alpha');
+$sortorder        = GETPOST('sortorder', 'alpha');
+$page             = max(0, (int) GETPOST('page', 'int'));
+$limit            = GETPOST('limit', 'int') > 0 ? GETPOST('limit', 'int') : $conf->liste_limit;
+$offset           = $page * $limit;
+
+// Objects
 $form = new Form($db);
 
-if ($id > 0) {
-    $result = $object->fetch($id);
-    if ($result < 0) {
-        dol_print_error($db);
+// --------------------------------------------------------------------
+// Actions (create/update/delete) – keep your existing business logic
+// --------------------------------------------------------------------
+
+if ($action == 'create' && $user->rights->multidoctemplate->write) {
+    if (!checkToken()) {
+        accessforbidden('Bad token');
+    }
+
+    // TODO: call your existing code to create a new template
+    // e.g. $res = createTemplateFromPost($db, $user);
+
+    if (!empty($res) && $res > 0) {
+        setEventMessages($langs->trans('RecordSaved'), null, 'mesgs');
+        header('Location: '.$_SERVER['PHP_SELF']);
         exit;
-    }
-}
-
-if (empty($object->id)) {
-    accessforbidden('ErrorRecordNotFound');
-}
-
-// Get upload directory
-$upload_dir = MultiDocTemplate::getUploadDir($object->id);
-
-/*
- * Actions
- */
-
-// Upload template file
-if ($action == 'upload' && $user->hasRight('multidoctemplate', 'template_creer')) {
-    if (!empty($_FILES['templatefile']['name'])) {
-        $filename = $_FILES['templatefile']['name'];
-
-        // Check file extension
-        if (!MultiDocTemplate::isAllowedExtension($filename)) {
-            setEventMessages($langs->trans('ErrorFileExtensionNotAllowed'), null, 'errors');
-        } else {
-            // Create directory if not exists
-            if (!is_dir($upload_dir)) {
-                dol_mkdir($upload_dir);
-            }
-
-            // Sanitize filename
-            $sanitized_filename = dol_sanitizeFileName($filename);
-            $filepath = $upload_dir.'/'.$sanitized_filename;
-
-            // Move uploaded file
-            if (dol_move_uploaded_file($_FILES['templatefile']['tmp_name'], $filepath, 1, 0, $_FILES['templatefile']['error']) > 0) {
-                // Create template record
-                $template->ref = 'TPL-'.$object->id.'-'.date('YmdHis');
-                $template->label = GETPOST('template_label', 'alphanohtml') ?: pathinfo($filename, PATHINFO_FILENAME);
-                $template->description = GETPOST('template_description', 'restricthtml');
-                $template->tag = GETPOST('template_tag', 'alphanohtml');
-                $template->fk_usergroup = $object->id;
-                $template->filename = $sanitized_filename;
-                $template->filepath = $filepath;
-                $template->filetype = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-                $template->filesize = filesize($filepath);
-                $template->mime_type = MultiDocTemplate::getMimeType($filename);
-
-                $result = $template->create($user);
-
-                if ($result > 0) {
-                    setEventMessages($langs->trans('TemplateUploadSuccess'), null, 'mesgs');
-                } else {
-                    // Delete file if DB insert failed
-                    dol_delete_file($filepath);
-                    setEventMessages($template->error, null, 'errors');
-                }
-            } else {
-                setEventMessages($langs->trans('ErrorFileUploadFailed'), null, 'errors');
-            }
-        }
     } else {
-        setEventMessages($langs->trans('ErrorFieldRequired', $langs->transnoentitiesnoconv('File')), null, 'errors');
+        // setEventMessages('Error...', $errors, 'errors');
+    }
+}
+
+if ($action == 'delete' && $user->rights->multidoctemplate->delete) {
+    if (!checkToken()) {
+        accessforbidden('Bad token');
     }
 
-    header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id);
+    $id = GETPOST('id', 'int');
+
+    // TODO: call your existing delete logic for template $id
+
+    header('Location: '.$_SERVER['PHP_SELF']);
     exit;
 }
 
-// Delete template
-if ($action == 'confirm_delete' && $confirm == 'yes' && $user->hasRight('multidoctemplate', 'template_supprimer')) {
-    if ($template_id > 0) {
-        $template->fetch($template_id);
-        if ($template->id > 0) {
-            $result = $template->delete($user);
-            if ($result > 0) {
-                setEventMessages($langs->trans('TemplateDeleted'), null, 'mesgs');
-            } else {
-                setEventMessages($template->error, null, 'errors');
-            }
-        }
-    }
-    header('Location: '.$_SERVER['PHP_SELF'].'?id='.$object->id);
-    exit;
-}
+// --------------------------------------------------------------------
+// Load templates list – use your existing model / db logic
+// --------------------------------------------------------------------
 
-/*
- * View
- */
+// Expected result structure (you adapt this to your real code):
+// $templatesByTag = array(
+//     'FolderA' => array( (object)array('id'=>1, 'label'=>'...', 'filename'=>'...', 'groupname'=>'...', 'format'=>'ODT', 'datec'=>...), ... ),
+//     'FolderB' => array(...),
+// );
+$templatesByTag = array();
 
-$title = $langs->trans('Templates').' - '.$object->name;
+// TODO: replace with your real loading code; the following is just schema:
+//
+// $sql = "SELECT ... FROM ".MAIN_DB_PREFIX."multidoctemplate_template ...";
+// add search conditions on $search_template, $search_tag
+// add sort on $sortfield/$sortorder
+// $resql = $db->query($sql);
+// while ($obj = $db->fetch_object($resql)) {
+//     $tag = (string) $obj->tag;
+//     if (!isset($templatesByTag[$tag])) $templatesByTag[$tag] = array();
+//     $templatesByTag[$tag][] = $obj;
+// }
+
+// --------------------------------------------------------------------
+// View
+// --------------------------------------------------------------------
+
+$title = $langs->trans('MultiDocTemplateTemplates');
 llxHeader('', $title);
 
-// Prepare tabs
-$head = group_prepare_head($object);
+print load_fiche_titre($title, '', 'multidoctemplate@multidoctemplate');
 
-print dol_get_fiche_head($head, 'templates', $langs->trans('Group'), -1, 'group');
-
-// Group info
-$linkback = '<a href="'.DOL_URL_ROOT.'/user/group/list.php?restore_lastsearch_values=1">'.$langs->trans('BackToList').'</a>';
-dol_banner_tab($object, 'id', $linkback, $user->hasRight('user', 'user', 'lire'));
+// Search & top actions
+print '<form method="GET" action="'.$_SERVER["PHP_SELF"].'">';
+print '<input type="hidden" name="token" value="'.newToken().'">';
 
 print '<div class="fichecenter">';
-print '<div class="underbanner clearboth"></div>';
-print '</div>';
+print '<div class="fichehalfleft">';
 
-print dol_get_fiche_end();
+// Search box
+print '<table class="noborder">';
+print '<tr class="liste_titre">';
+print '<th colspan="2">'.$langs->trans('Search').'</th>';
+print '</tr>';
 
-// Delete confirmation dialog
-if ($action == 'delete') {
-    $formconfirm = $form->formconfirm(
-        $_SERVER['PHP_SELF'].'?id='.$object->id.'&template_id='.$template_id,
-        $langs->trans('DeleteTemplate'),
-        $langs->trans('ConfirmDeleteTemplate'),
-        'confirm_delete',
-        '',
-        0,
-        1
-    );
-    print $formconfirm;
+print '<tr class="oddeven">';
+print '<td class="nowraponall">'.$langs->trans('Template').'</td>';
+print '<td>';
+print '<input type="text" class="flat" name="search_template" value="'.dol_escape_htmltag($search_template).'">';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td class="nowraponall">'.$langs->trans('Tag').'</td>';
+print '<td>';
+print '<input type="text" class="flat" name="search_tag" value="'.dol_escape_htmltag($search_tag).'">';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td colspan="2" class="center">';
+print '<input type="submit" class="button" value="'.$langs->trans('Search').'">';
+print '&nbsp;';
+print '<a class="butAction" href="'.$_SERVER["PHP_SELF"].'">'.$langs->trans('RemoveFilter').'</a>';
+print '</td>';
+print '</tr>';
+
+print '</table>';
+
+print '</div>'; // fichehalfleft
+
+// New template button
+print '<div class="fichehalfright" style="text-align:right;">';
+if (!empty($user->rights->multidoctemplate->write)) {
+    print '<a class="butAction" href="'.$_SERVER["PHP_SELF"].'?action=createform">';
+    print $langs->trans('MultiDocTemplateNewTemplate');
+    print '</a>';
 }
+print '</div>'; // fichehalfright
+print '</div>'; // fichecenter
+print '</form>';
 
-// Upload form
-if ($user->hasRight('multidoctemplate', 'template_creer')) {
-    print '<div class="tabsAction">';
-    print '<form enctype="multipart/form-data" action="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'" method="POST">';
+print '<br>';
+
+// Creation form (inline) if action=createform
+if ($action == 'createform' && !empty($user->rights->multidoctemplate->write)) {
+    print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'" enctype="multipart/form-data">';
     print '<input type="hidden" name="token" value="'.newToken().'">';
-    print '<input type="hidden" name="action" value="upload">';
+    print '<input type="hidden" name="action" value="create">';
 
-    print '<div class="fichecenter">';
+    print '<div class="div-table-responsive-no-min">';
     print '<table class="noborder centpercent">';
     print '<tr class="liste_titre">';
-    print '<th colspan="2">'.$langs->trans('UploadNewTemplate').'</th>';
+    print '<th colspan="2">'.$langs->trans('MultiDocTemplateNewTemplate').'</th>';
     print '</tr>';
 
-    // Tag (folder)
     print '<tr class="oddeven">';
-    print '<td class="titlefield">'.$langs->trans('Tag').' <span class="star">*</span></td>';
-    print '<td><input type="text" name="template_tag" size="40" class="flat" placeholder="e.g. course, exam, credential" required></td>';
+    print '<td class="fieldrequired">'.$langs->trans('Label').'</td>';
+    print '<td><input type="text" class="flat" name="label" value=""></td>';
     print '</tr>';
 
-    // Label
     print '<tr class="oddeven">';
-    print '<td>'.$langs->trans('Label').'</td>';
-    print '<td><input type="text" name="template_label" size="40" class="flat"></td>';
+    print '<td>'.$langs->trans('Tag').'</td>';
+    print '<td><input type="text" class="flat" name="tag" value=""></td>';
     print '</tr>';
 
-    // Description
     print '<tr class="oddeven">';
-    print '<td>'.$langs->trans('Description').'</td>';
-    print '<td><textarea name="template_description" rows="2" cols="40" class="flat"></textarea></td>';
+    print '<td class="fieldrequired">'.$langs->trans('File').'</td>';
+    print '<td><input type="file" name="userfile" class="flat" required></td>';
     print '</tr>';
 
-    // File
+    // TODO: group selector if templates are group-based
+    // $form->select_dolgroups(...)
+
     print '<tr class="oddeven">';
-    print '<td>'.$langs->trans('File').' <span class="star">*</span></td>';
-    print '<td>';
-    print '<input type="file" name="templatefile" class="flat">';
-    print '<br><small>'.$langs->trans('AllowedFormats').': '.implode(', ', MultiDocTemplate::$allowed_extensions).'</small>';
+    print '<td colspan="2" class="center">';
+    print '<input type="submit" class="button" value="'.$langs->trans('Create').'">';
+    print '&nbsp;';
+    print '<a class="button" href="'.$_SERVER["PHP_SELF"].'">'.$langs->trans('Cancel').'</a>';
     print '</td>';
     print '</tr>';
 
     print '</table>';
     print '</div>';
 
-    print '<div class="center">';
-    print '<input type="submit" class="button button-primary" value="'.$langs->trans('Upload').'">';
-    print '</div>';
-
     print '</form>';
-    print '</div>';
+    print '<br>';
 }
 
-// List of templates
-print '<br>';
-print load_fiche_titre($langs->trans('TemplatesList'), '', '');
-
-$templates = $template->fetchAllByUserGroup($object->id, -1);
-
-print '<div class="div-table-responsive">';
-print '<table class="noborder centpercent">';
-print '<tr class="liste_titre">';
-print '<th>'.$langs->trans('Tag').'</th>';
-print '<th>'.$langs->trans('Label').'</th>';
-print '<th>'.$langs->trans('Filename').'</th>';
-print '<th>'.$langs->trans('Type').'</th>';
-print '<th class="center">'.$langs->trans('Actions').'</th>';
-print '</tr>';
-
-if (is_array($templates) && count($templates) > 0) {
-    foreach ($templates as $tpl) {
-        print '<tr class="oddeven">';
-
-        // Tag
-        print '<td><span class="badge badge-secondary">'.dol_escape_htmltag($tpl->tag ?: '-').'</span></td>';
-
-        // Label
-        print '<td>'.dol_escape_htmltag($tpl->label).'</td>';
-
-        // Filename
-        print '<td>';
-        if (file_exists($tpl->filepath)) {
-            print '<a href="'.DOL_URL_ROOT.'/document.php?modulepart=multidoctemplate&file=templates/group_'.$object->id.'/'.urlencode($tpl->filename).'" target="_blank">';
-            print img_picto('', 'file').' '.dol_escape_htmltag($tpl->filename);
-            print '</a>';
-        } else {
-            print '<span class="opacitymedium">'.dol_escape_htmltag($tpl->filename).' ('.$langs->trans('FileNotFound').')</span>';
-        }
-        print '</td>';
-
-        // Type
-        print '<td>'.strtoupper($tpl->filetype).'</td>';
-
-        // Actions
-        print '<td class="center nowraponall">';
-        if ($user->hasRight('multidoctemplate', 'template_supprimer')) {
-            print '<a class="deletefilelink" href="'.$_SERVER['PHP_SELF'].'?id='.$object->id.'&action=delete&template_id='.$tpl->id.'&token='.newToken().'">';
-            print img_picto($langs->trans('Delete'), 'delete');
-            print '</a>';
-        }
-        print '</td>';
-
-        print '</tr>';
-    }
+// --------------------------------------------------------------------
+// Tag (folder) groups
+// --------------------------------------------------------------------
+if (empty($templatesByTag)) {
+    print $langs->trans('NoRecords');
 } else {
-    print '<tr class="oddeven"><td colspan="5" class="opacitymedium">'.$langs->trans('NoTemplatesYet').'</td></tr>';
-}
+    foreach ($templatesByTag as $tag => $list) {
+        $tagLabel = dol_escape_htmltag($tag !== '' ? $tag : $langs->trans('MultiDocTemplateUntagged'));
 
-print '</table>';
-print '</div>';
+        print load_fiche_titre($langs->trans('MultiDocTemplateFolder').' : '.$tagLabel, '', 'folder');
+
+        print '<div class="div-table-responsive">';
+        print '<table class="noborder centpercent">';
+        print '<tr class="liste_titre">';
+        print '<th>'.$langs->trans('Label').'</th>';
+        print '<th>'.$langs->trans('File').'</th>';
+        print '<th>'.$langs->trans('Format').'</th>';
+        print '<th>'.$langs->trans('Group').'</th>';
+        print '<th>'.$langs->trans('DateCreation').'</th>';
+        print '<th class="right">'.$langs->trans('Actions').'</th>';
+        print '</tr>';
+
+        $var = true;
+        foreach ($list as $obj) {
+            $var = !$var;
+            print '<tr class="'.($var ? 'pair' : 'impair').'">';
+
+            // Label
+            print '<td>'.dol_escape_htmltag($obj->label).'</td>';
+
+            // File
+            print '<td>'.dol_escape_htmltag($obj->filename).'</td>';
+
+            // Format
+            print '<td>'.dol_escape_htmltag($obj->format).'</td>';
+
+            // Group
+            print '<td>'.dol_escape_htmltag($obj->groupname).'</td>';
+
+            // Date
+            print '<td>'.dol_print_date($db->jdate($obj->datec), 'dayhour').'</td>';
+
+            // Actions
+            print '<td class="right nowraponall">';
+            if (!empty($user->rights->multidoctemplate->write)) {
+                // Edit
+                print '<a class="butActionSmall" href="'.$_SERVER["PHP_SELF"].'?action=edit&id='.$obj->id.'">';
+                print $langs->trans('Modify');
+                print '</a> ';
+            }
+            if (!empty($user->rights->multidoctemplate->delete)) {
+                // Delete
+                $url = $_SERVER["PHP_SELF"].'?action=delete&id='.$obj->id.'&token='.newToken();
+                $confirm = dol_escape_js($langs->transnoentities('ConfirmDelete'));
+                print '<a class="butActionDelete" href="'.$url.'" onclick="return confirm(\''.$confirm.'\');">';
+                print $langs->trans('Delete');
+                print '</a>';
+            }
+            print '</td>';
+
+            print '</tr>';
+        }
+
+        print '</table>';
+        print '</div>';
+        print '<br>';
+    }
+}
 
 llxFooter();
 $db->close();
