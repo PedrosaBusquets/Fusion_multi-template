@@ -43,6 +43,7 @@ if (!$res && file_exists("../../main.inc.php")) {
 if (!$res) {
     die("Include of main fails");
 }
+
 require_once DOL_DOCUMENT_ROOT.'/user/class/usergroup.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/usergroups.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
@@ -51,7 +52,11 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once __DIR__.'/class/template.class.php';
 
 // Load translations
+<<<<<<< Updated upstream
 $langs->loadLangs(array('users', 'multidoctemplate@multidoctemplate'));
+=======
+$langs->loadLangs(array('users', 'multidoctemplate@multidoctemplate', 'companies'));
+>>>>>>> Stashed changes
 
 // Get parameters
 $id = GETPOST('id', 'int');

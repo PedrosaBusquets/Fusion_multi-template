@@ -11,29 +11,33 @@ require_once DOL_DOCUMENT_ROOT.'/core/class/commonobject.class.php';
 
 /**
  * Class MultiDocArchive
- * Manages generated archive documents
+ * Stores generated or uploaded archives for thirdparties/contacts
  */
 class MultiDocArchive extends CommonObject
 {
-    public $element = 'multidoctemplate_archive';
+    public $element       = 'multidoctemplate_archive';
     public $table_element = 'multidoctemplate_archive';
-    public $picto = 'file';
+    public $picto         = 'file';
+
+    /** @var DoliDB */
+    public $db;
 
     public $id;
     public $ref;
-    public $fk_template;
-    public $object_type;
-    public $object_id;
+    public $fk_template;      // 0 if direct upload
+    public $object_type;      // 'thirdparty' or 'contact'
+    public $object_id;        // socid or contact id
     public $filename;
     public $filepath;
     public $filetype;
     public $filesize;
-    public $fk_category;
-    public $tag_filter;
+    public $tag_filter;       // folder/tag name
     public $date_generation;
     public $fk_user_creat;
     public $entity;
-    public $is_direct_upload;  // Flag for direct uploads (not from template)
+
+    public $error  = '';
+    public $errors = array();
 
     /**
      * Constructor
@@ -46,11 +50,65 @@ class MultiDocArchive extends CommonObject
     }
 
     /**
+     * Generate a reference for an archive
+     *
+     * @param string $object_type 'thirdparty' or 'contact'
+     * @param int    $object_id
+     * @return string
+     */
+    public static function generateRef($object_type, $object_id)
+    {
+        $object_type = ($object_type === 'contact') ? 'CNT' : 'TP';
+        $object_id = (int) $object_id;
+        return $object_type.'-'.$object_id.'-'.date('YmdHis');
+    }
+
+    /**
+     * Get base directory to store an archive (per object + tag)
+     *
+     * Structure:
+     *  - Thirdparty: DOL_DATA_ROOT/multidoctemplate/thirdparty/<socid>/<tag>/
+     *  - Contact:    DOL_DATA_ROOT/multidoctemplate/contact/<contactid>/<tag>/
+     *
+     * @param string $object_type 'thirdparty' or 'contact'
+     * @param int    $object_id   socid or contact id
+     * @param string $tag         folder/tag name (will be sanitized; if empty -> 'DEFAULT')
+     * @return string             absolute directory path
+     */
+    public static function getArchiveDir($object_type, $object_id, $tag)
+    {
+        // Normalize inputs
+        $object_type = ($object_type === 'contact') ? 'contact' : 'thirdparty';
+        $object_id   = (int) $object_id;
+        $tag         = trim($tag);
+
+        if ($tag === '') {
+            $tag = 'DEFAULT';
+        }
+
+        // Sanitize tag for filesystem
+        $tag = dol_sanitizeFileName($tag);
+
+        // Base dir for module
+        $basedir = DOL_DATA_ROOT.'/multidoctemplate';
+
+        if ($object_type === 'thirdparty') {
+            // Thirdparty archives: multidoctemplate/thirdparty/<socid>/<tag>/
+            $dir = $basedir.'/thirdparty/'.$object_id.'/'.$tag;
+        } else {
+            // Contact archives: multidoctemplate/contact/<contactid>/<tag>/
+            $dir = $basedir.'/contact/'.$object_id.'/'.$tag;
+        }
+
+        return $dir;
+    }
+
+    /**
      * Create archive record in database
      *
-     * @param User $user User that creates
-     * @param int $notrigger 0=launch triggers, 1=disable triggers
-     * @return int <0 if KO, Id of created object if OK
+     * @param User $user
+     * @param int  $notrigger
+     * @return int <0 if KO, >0 if OK
      */
     public function create($user, $notrigger = 0)
     {
@@ -59,44 +117,38 @@ class MultiDocArchive extends CommonObject
         $error = 0;
         $now = dol_now();
 
-        // Clean parameters
-        $this->ref = dol_sanitizeFileName($this->ref);
-
-        // Check parameters
-        if (empty($this->ref)) {
-            $this->error = 'ErrorRefRequired';
-            return -1;
-        }
-        // fk_template can be 0 for direct uploads
-
         $this->db->begin();
 
         $sql = "INSERT INTO ".MAIN_DB_PREFIX.$this->table_element." (";
-        $sql .= "ref, fk_template, object_type, object_id, filename, filepath, filetype, filesize,";
-        $sql .= "fk_category, tag_filter, date_generation, fk_user_creat, entity";
+        $sql .= "ref, fk_template, object_type, object_id,";
+        $sql .= "filename, filepath, filetype, filesize, tag_filter,";
+        $sql .= "date_generation, fk_user_creat, entity";
         $sql .= ") VALUES (";
         $sql .= "'".$this->db->escape($this->ref)."',";
-        $sql .= ($this->fk_template > 0 ? (int) $this->fk_template : "NULL").",";  // NULL for direct uploads
+        $sql .= (int) $this->fk_template.",";
         $sql .= "'".$this->db->escape($this->object_type)."',";
         $sql .= (int) $this->object_id.",";
         $sql .= "'".$this->db->escape($this->filename)."',";
         $sql .= "'".$this->db->escape($this->filepath)."',";
         $sql .= "'".$this->db->escape($this->filetype)."',";
         $sql .= (int) $this->filesize.",";
-        $sql .= ($this->fk_category > 0 ? (int) $this->fk_category : "NULL").",";
-        $sql .= (!empty($this->tag_filter) ? "'".$this->db->escape($this->tag_filter)."'" : "NULL").",";
+        $sql .= "'".$this->db->escape($this->tag_filter)."',";
         $sql .= "'".$this->db->idate($now)."',";
         $sql .= (int) $user->id.",";
         $sql .= (int) $conf->entity;
         $sql .= ")";
 
-        dol_syslog(get_class($this)."::create", LOG_DEBUG);
+        dol_syslog(__METHOD__, LOG_DEBUG);
         $resql = $this->db->query($sql);
-
         if ($resql) {
             $this->id = $this->db->last_insert_id(MAIN_DB_PREFIX.$this->table_element);
             $this->date_generation = $now;
-            $this->fk_user_creat = $user->id;
+            $this->fk_user_creat   = $user->id;
+
+            if (!$notrigger) {
+                // $result = $this->call_trigger('MULTIDOCTEMPLATE_ARCHIVE_CREATE', $user);
+                // if ($result < 0) $error++;
+            }
 
             if (!$error) {
                 $this->db->commit();
@@ -113,55 +165,42 @@ class MultiDocArchive extends CommonObject
     }
 
     /**
-     * Load archive from database
+     * Fetch archive by id
      *
-     * @param int $id Id of archive to fetch
-     * @param string $ref Ref of archive to fetch
+     * @param int $id
      * @return int <0 if KO, 0 if not found, >0 if OK
      */
-    public function fetch($id, $ref = '')
+    public function fetch($id)
     {
-        global $conf;
+        $sql = "SELECT rowid, ref, fk_template, object_type, object_id,";
+        $sql .= " filename, filepath, filetype, filesize, tag_filter,";
+        $sql .= " date_generation, fk_user_creat, entity";
+        $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
+        $sql .= " WHERE rowid = ".(int) $id;
 
-        $sql = "SELECT a.rowid, a.ref, a.fk_template, a.object_type, a.object_id,";
-        $sql .= " a.filename, a.filepath, a.filetype, a.filesize,";
-        $sql .= " a.fk_category, a.tag_filter, a.date_generation, a.fk_user_creat, a.entity";
-        $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element." as a";
-        $sql .= " WHERE a.entity IN (".getEntity($this->element).")";
-        if ($id) {
-            $sql .= " AND a.rowid = ".(int) $id;
-        } elseif ($ref) {
-            $sql .= " AND a.ref = '".$this->db->escape($ref)."'";
-        }
-
-        dol_syslog(get_class($this)."::fetch", LOG_DEBUG);
+        dol_syslog(__METHOD__, LOG_DEBUG);
         $resql = $this->db->query($sql);
-
         if ($resql) {
-            if ($this->db->num_rows($resql)) {
-                $obj = $this->db->fetch_object($resql);
-
-                $this->id = $obj->rowid;
-                $this->ref = $obj->ref;
-                $this->fk_template = $obj->fk_template;
-                $this->object_type = $obj->object_type;
-                $this->object_id = $obj->object_id;
-                $this->filename = $obj->filename;
-                $this->filepath = $obj->filepath;
-                $this->filetype = $obj->filetype;
-                $this->filesize = $obj->filesize;
-                $this->fk_category = $obj->fk_category;
-                $this->tag_filter = $obj->tag_filter;
+            if ($obj = $this->db->fetch_object($resql)) {
+                $this->id              = $obj->rowid;
+                $this->ref             = $obj->ref;
+                $this->fk_template     = $obj->fk_template;
+                $this->object_type     = $obj->object_type;
+                $this->object_id       = $obj->object_id;
+                $this->filename        = $obj->filename;
+                $this->filepath        = $obj->filepath;
+                $this->filetype        = $obj->filetype;
+                $this->filesize        = $obj->filesize;
+                $this->tag_filter      = $obj->tag_filter;
                 $this->date_generation = $this->db->jdate($obj->date_generation);
-                $this->fk_user_creat = $obj->fk_user_creat;
-                $this->entity = $obj->entity;
+                $this->fk_user_creat   = $obj->fk_user_creat;
+                $this->entity          = $obj->entity;
 
                 $this->db->free($resql);
                 return 1;
-            } else {
-                $this->db->free($resql);
-                return 0;
             }
+            $this->db->free($resql);
+            return 0;
         } else {
             $this->error = $this->db->lasterror();
             return -1;
@@ -169,11 +208,11 @@ class MultiDocArchive extends CommonObject
     }
 
     /**
-     * Delete archive from database and disk
+     * Delete archive (and file) from database
      *
-     * @param User $user User that deletes
-     * @param int $notrigger 0=launch triggers, 1=disable triggers
-     * @return int <0 if KO, >0 if OK
+     * @param User $user
+     * @param int  $notrigger
+     * @return int >0 if OK, <0 if KO
      */
     public function delete($user, $notrigger = 0)
     {
@@ -186,13 +225,17 @@ class MultiDocArchive extends CommonObject
             dol_delete_file($this->filepath);
         }
 
+        if (!$notrigger) {
+            // $result = $this->call_trigger('MULTIDOCTEMPLATE_ARCHIVE_DELETE', $user);
+            // if ($result < 0) $error++;
+        }
+
         if (!$error) {
             $sql = "DELETE FROM ".MAIN_DB_PREFIX.$this->table_element;
             $sql .= " WHERE rowid = ".(int) $this->id;
 
-            dol_syslog(get_class($this)."::delete", LOG_DEBUG);
+            dol_syslog(__METHOD__, LOG_DEBUG);
             $resql = $this->db->query($sql);
-
             if (!$resql) {
                 $this->error = $this->db->lasterror();
                 $error++;
@@ -209,56 +252,47 @@ class MultiDocArchive extends CommonObject
     }
 
     /**
-     * Get archives for an object (thirdparty or contact)
+     * Fetch all archives for a given object (thirdparty/contact)
      *
-     * @param string $object_type Object type (thirdparty, contact)
-     * @param int $object_id Object ID
-     * @param int $fk_category Category filter (optional)
-     * @return array|int Array of archives or -1 on error
+     * @param string $object_type 'thirdparty' or 'contact'
+     * @param int    $object_id
+     * @return array|int
      */
-    public function fetchAllByObject($object_type, $object_id, $fk_category = 0)
+    public function fetchAllByObject($object_type, $object_id)
     {
-        global $conf;
-
         $archives = array();
 
-        $sql = "SELECT a.rowid, a.ref, a.fk_template, a.object_type, a.object_id,";
-        $sql .= " a.filename, a.filepath, a.filetype, a.filesize,";
-        $sql .= " a.fk_category, a.tag_filter, a.date_generation, a.fk_user_creat,";
-        $sql .= " t.label as template_label, t.tag as template_tag, t.fk_usergroup";
-        $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element." as a";
-        $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."multidoctemplate_template as t ON t.rowid = a.fk_template";
-        $sql .= " WHERE a.entity IN (".getEntity($this->element).")";
-        $sql .= " AND a.object_type = '".$this->db->escape($object_type)."'";
-        $sql .= " AND a.object_id = ".(int) $object_id;
-        if ($fk_category > 0) {
-            $sql .= " AND a.fk_category = ".(int) $fk_category;
-        }
-        $sql .= " ORDER BY t.tag ASC, a.date_generation DESC";
+        $object_type = ($object_type === 'contact') ? 'contact' : 'thirdparty';
+        $object_id   = (int) $object_id;
 
-        dol_syslog(get_class($this)."::fetchAllByObject", LOG_DEBUG);
+        $sql = "SELECT rowid, ref, fk_template, object_type, object_id,";
+        $sql .= " filename, filepath, filetype, filesize, tag_filter,";
+        $sql .= " date_generation, fk_user_creat, entity";
+        $sql .= " FROM ".MAIN_DB_PREFIX.$this->table_element;
+        $sql .= " WHERE object_type = '".$this->db->escape($object_type)."'";
+        $sql .= " AND object_id = ".$object_id;
+        $sql .= " ORDER BY tag_filter ASC, date_generation DESC";
+
+        dol_syslog(__METHOD__, LOG_DEBUG);
         $resql = $this->db->query($sql);
-
         if ($resql) {
             while ($obj = $this->db->fetch_object($resql)) {
-                $archive = new self($this->db);
-                $archive->id = $obj->rowid;
-                $archive->ref = $obj->ref;
-                $archive->fk_template = $obj->fk_template;
-                $archive->object_type = $obj->object_type;
-                $archive->object_id = $obj->object_id;
-                $archive->filename = $obj->filename;
-                $archive->filepath = $obj->filepath;
-                $archive->filetype = $obj->filetype;
-                $archive->filesize = $obj->filesize;
-                $archive->fk_category = $obj->fk_category;
-                $archive->tag_filter = $obj->tag_filter;
-                $archive->date_generation = $this->db->jdate($obj->date_generation);
-                $archive->fk_user_creat = $obj->fk_user_creat;
-                $archive->template_label = $obj->template_label;
-                $archive->template_tag = $obj->template_tag;
-                $archive->fk_usergroup = $obj->fk_usergroup;
-                $archives[$obj->rowid] = $archive;
+                $arch = new self($this->db);
+                $arch->id              = $obj->rowid;
+                $arch->ref             = $obj->ref;
+                $arch->fk_template     = $obj->fk_template;
+                $arch->object_type     = $obj->object_type;
+                $arch->object_id       = $obj->object_id;
+                $arch->filename        = $obj->filename;
+                $arch->filepath        = $obj->filepath;
+                $arch->filetype        = $obj->filetype;
+                $arch->filesize        = $obj->filesize;
+                $arch->tag_filter      = $obj->tag_filter;
+                $arch->date_generation = $this->db->jdate($obj->date_generation);
+                $arch->fk_user_creat   = $obj->fk_user_creat;
+                $arch->entity          = $obj->entity;
+
+                $archives[$obj->rowid] = $arch;
             }
             $this->db->free($resql);
             return $archives;
@@ -266,38 +300,5 @@ class MultiDocArchive extends CommonObject
             $this->error = $this->db->lasterror();
             return -1;
         }
-    }
-
-    /**
-     * Get archive storage directory for an object
-     *
-     * @param string $object_type Object type
-     * @param int $object_id Object ID
-     * @param string $tag_filter Tag/category filter (optional)
-     * @return string Directory path
-     */
-    public static function getArchiveDir($object_type, $object_id, $tag_filter = '')
-    {
-        global $conf;
-
-        $basedir = DOL_DATA_ROOT.'/multidoctemplate/archives/'.$object_type.'_'.(int) $object_id;
-
-        if (!empty($tag_filter)) {
-            $basedir .= '/'.dol_sanitizeFileName($tag_filter);
-        }
-
-        return $basedir;
-    }
-
-    /**
-     * Generate unique reference for archive
-     *
-     * @param string $object_type Object type
-     * @param int $object_id Object ID
-     * @return string Reference
-     */
-    public static function generateRef($object_type, $object_id)
-    {
-        return strtoupper(substr($object_type, 0, 3)).'_'.$object_id.'_'.date('YmdHis').'_'.substr(md5(uniqid()), 0, 4);
     }
 }

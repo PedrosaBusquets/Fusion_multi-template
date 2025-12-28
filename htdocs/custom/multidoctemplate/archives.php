@@ -57,12 +57,21 @@ require_once __DIR__.'/class/documentgenerator.class.php';
 $langs->loadLangs(array('companies', 'multidoctemplate@multidoctemplate'));
 
 // Get parameters
+<<<<<<< Updated upstream
 $id = GETPOST('id', 'int');
 $object_type = GETPOST('object_type', 'alpha');
 $action = GETPOST('action', 'aZ09');
 $confirm = GETPOST('confirm', 'alpha');
 $template_id = GETPOST('template_id', 'int');
 $archive_id = GETPOST('archive_id', 'int');
+=======
+$id          = GETPOST('id', 'int');
+$object_type = GETPOST('object_type', 'alpha');
+$action      = GETPOST('action', 'aZ09');
+$confirm     = GETPOST('confirm', 'alpha');
+$template_id = GETPOST('template_id', 'int');
+$archive_id  = GETPOST('archive_id', 'int');
+>>>>>>> Stashed changes
 $category_id = GETPOST('category_id', 'int');
 
 // Default object type
@@ -76,9 +85,15 @@ if (!$user->hasRight('societe', 'lire')) {
 }
 
 // Initialize objects
+<<<<<<< Updated upstream
 $template = new MultiDocTemplate($db);
 $archive = new MultiDocArchive($db);
 $generator = new MultiDocGenerator($db);
+=======
+$template   = new MultiDocTemplate($db);
+$archive    = new MultiDocArchive($db);
+$generator  = new MultiDocGenerator($db);
+>>>>>>> Stashed changes
 
 // Load main object
 if ($object_type == 'thirdparty') {
@@ -99,7 +114,11 @@ if (empty($object->id)) {
     accessforbidden('ErrorRecordNotFound');
 }
 
+<<<<<<< Updated upstream
 // Get object's categories/tags for filtering
+=======
+// Get object's categories/tags for filtering (only used for tag_filter)
+>>>>>>> Stashed changes
 $object_categories = array();
 if ($object_type == 'thirdparty') {
     $c = new Categorie($db);
@@ -156,8 +175,13 @@ if ($action == 'generate' && $template_id > 0 && $user->hasRight('multidoctempla
 // Direct file upload
 if ($action == 'directupload' && $user->hasRight('multidoctemplate', 'archive_creer')) {
     if (!empty($_FILES['directfile']['name'])) {
+<<<<<<< Updated upstream
         $filename = $_FILES['directfile']['name'];
         $upload_tag = GETPOST('upload_tag', 'alphanohtml');
+=======
+        $filename     = $_FILES['directfile']['name'];
+        $upload_tag   = GETPOST('upload_tag', 'alphanohtml');
+>>>>>>> Stashed changes
         $upload_label = GETPOST('upload_label', 'alphanohtml');
 
         if (empty($upload_tag)) {
@@ -174,7 +198,11 @@ if ($action == 'directupload' && $user->hasRight('multidoctemplate', 'archive_cr
             // Sanitize filename
             $sanitized_filename = dol_sanitizeFileName($filename);
             // Add timestamp to avoid conflicts
+<<<<<<< Updated upstream
             $basename = pathinfo($sanitized_filename, PATHINFO_FILENAME);
+=======
+            $basename  = pathinfo($sanitized_filename, PATHINFO_FILENAME);
+>>>>>>> Stashed changes
             $extension = pathinfo($sanitized_filename, PATHINFO_EXTENSION);
             $final_filename = $basename.'_'.date('YmdHis').'.'.$extension;
             $filepath = $upload_dir.'/'.$final_filename;
@@ -182,6 +210,7 @@ if ($action == 'directupload' && $user->hasRight('multidoctemplate', 'archive_cr
             // Move uploaded file
             if (dol_move_uploaded_file($_FILES['directfile']['tmp_name'], $filepath, 1, 0, $_FILES['directfile']['error']) > 0) {
                 // Create archive record
+<<<<<<< Updated upstream
                 $archive->ref = MultiDocArchive::generateRef($object_type, $object->id);
                 $archive->fk_template = 0;  // No template - direct upload
                 $archive->object_type = $object_type;
@@ -191,6 +220,17 @@ if ($action == 'directupload' && $user->hasRight('multidoctemplate', 'archive_cr
                 $archive->filetype = strtolower($extension);
                 $archive->filesize = filesize($filepath);
                 $archive->tag_filter = $upload_tag;
+=======
+                $archive->ref         = MultiDocArchive::generateRef($object_type, $object->id);
+                $archive->fk_template = 0;  // No template - direct upload
+                $archive->object_type = $object_type;
+                $archive->object_id   = $object->id;
+                $archive->filename    = $final_filename;
+                $archive->filepath    = $filepath;
+                $archive->filetype    = strtolower($extension);
+                $archive->filesize    = filesize($filepath);
+                $archive->tag_filter  = $upload_tag;
+>>>>>>> Stashed changes
 
                 $result = $archive->create($user);
 
@@ -307,10 +347,31 @@ if ($user->hasRight('multidoctemplate', 'archive_creer')) {
     print '<div class="tabsAction">';
     print load_fiche_titre($langs->trans('GenerateArchive'), '', '');
 
+<<<<<<< Updated upstream
     // Get available templates for user
     $templates = $template->fetchAllForUser($user);
 
     if (is_array($templates) && count($templates) > 0) {
+=======
+    // NEW: Get available templates filtered for this object (category rules)
+    $templates_for_object = $template->getForObject($object);
+
+    if (is_array($templates_for_object) && count($templates_for_object) > 0) {
+        // Convert rows to objects compatible with existing explorer logic:
+        // we need usergroup name, description, tag, etc. If you need more,
+        // you can adapt this block; here we preserve label, tag, filetype, id.
+        $templates = array();
+        foreach ($templates_for_object as $rowid => $obj) {
+            $tpl = new stdClass();
+            $tpl->id          = $rowid;
+            $tpl->label       = $obj->label;
+            $tpl->description = $obj->description;
+            $tpl->tag         = $obj->tag;
+            $tpl->filetype    = $obj->filetype;
+            $templates[$rowid] = $tpl;
+        }
+
+>>>>>>> Stashed changes
         // Group templates by tag
         $templates_by_tag = array();
         foreach ($templates as $tpl) {
@@ -358,7 +419,10 @@ if ($user->hasRight('multidoctemplate', 'archive_creer')) {
                 print '<span class="template-label">'.dol_escape_htmltag($tpl->label).'</span>';
                 print ' <span class="opacitymedium">('.strtoupper($tpl->filetype).')</span>';
                 print '</a>';
+<<<<<<< Updated upstream
                 // Info icon with description tooltip (custom tooltip to avoid clipping)
+=======
+>>>>>>> Stashed changes
                 if (!empty($tpl->description)) {
                     print ' <span class="mdt-tooltip-trigger" data-tooltip="'.dol_escape_htmltag($tpl->description).'">'.img_picto('', 'info', 'style="vertical-align: middle; cursor: help;"').'</span>';
                 }
@@ -382,7 +446,11 @@ if ($user->hasRight('multidoctemplate', 'archive_creer')) {
         print '</form>';
 
         // JavaScript for file explorer functionality
+<<<<<<< Updated upstream
         $folder_open_icon = img_picto('', 'folder-open');
+=======
+        $folder_open_icon   = img_picto('', 'folder-open');
+>>>>>>> Stashed changes
         $folder_closed_icon = img_picto('', 'folder');
         print '<script type="text/javascript">
 var folderOpenIcon = \''.dol_escape_js($folder_open_icon).'\';
@@ -419,7 +487,10 @@ function selectTemplate(id, label, filetype) {
     document.getElementById("selected_template_name").innerHTML = label;
     document.getElementById("selected_template_name").className = "";
     document.getElementById("generate_btn").disabled = false;
+<<<<<<< Updated upstream
     // Show/hide PDF conversion checkbox (only for ODT files)
+=======
+>>>>>>> Stashed changes
     var pdfLabel = document.getElementById("convert_pdf_label");
     if (pdfLabel) {
         if (filetype === "odt") {
@@ -429,7 +500,10 @@ function selectTemplate(id, label, filetype) {
             document.getElementById("convert_to_pdf").checked = false;
         }
     }
+<<<<<<< Updated upstream
     // Highlight selected
+=======
+>>>>>>> Stashed changes
     var items = document.querySelectorAll(".template-item");
     items.forEach(function(el) { el.style.background = ""; });
     event.target.closest(".template-item").style.background = "#d4edda";
@@ -453,11 +527,17 @@ function filterTemplates() {
             }
         });
 
+<<<<<<< Updated upstream
         // Show/hide folder based on whether it has visible items
         var tag = folder.getAttribute("data-tag");
         if (hasVisible || tag.indexOf(search) > -1 || search === "") {
             folder.style.display = "block";
             // Expand folder when searching
+=======
+        var tag = folder.getAttribute("data-tag");
+        if (hasVisible || tag.indexOf(search) > -1 || search === "") {
+            folder.style.display = "block";
+>>>>>>> Stashed changes
             if (search !== "") {
                 var content = folder.querySelector(".folder-content");
                 var icon = folder.querySelector("[id$=\'_icon\']");
@@ -481,19 +561,28 @@ function filterTemplates() {
         var text = trigger.getAttribute("data-tooltip");
         if (!text) return;
 
+<<<<<<< Updated upstream
         // Create tooltip element
+=======
+>>>>>>> Stashed changes
         tooltip = document.createElement("div");
         tooltip.className = "mdt-tooltip";
         tooltip.textContent = text;
         document.body.appendChild(tooltip);
 
+<<<<<<< Updated upstream
         // Position tooltip above the trigger
+=======
+>>>>>>> Stashed changes
         var rect = trigger.getBoundingClientRect();
         var tooltipRect = tooltip.getBoundingClientRect();
         var left = rect.left;
         var top = rect.top - tooltipRect.height - 10;
 
+<<<<<<< Updated upstream
         // Adjust if tooltip goes off-screen
+=======
+>>>>>>> Stashed changes
         if (left + tooltipRect.width > window.innerWidth) {
             left = window.innerWidth - tooltipRect.width - 10;
         }
