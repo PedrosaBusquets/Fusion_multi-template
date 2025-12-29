@@ -8,7 +8,7 @@
  * Copyright (C) 2018       Ferran Marcet           <fmarcet@2byte.es>
  * Copyright (C) 2021-2023  Anthony Berton          <anthony.berton@bb2a.fr>
  * Copyright (C) 2024		MDW							<mdeweerd@users.noreply.github.com>
- * Copyright (C) 2024		Frédéric France				<frederic.france@free.fr>
+ * Copyright (C) 2024		FrÃ©dÃ©ric France				<frederic.france@free.fr>
  * Copyright (C) 2025		Marc de Lima Lucio			<marc-dll@user.noreply.github.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -3085,7 +3085,7 @@ img.photorefnoborder {
 <?php
 $minwidthtmenu = 66; /* minimum width for one top menu entry */
 $heightmenu = 48; /* height of top menu, part with image */
-$heightmenu2 = 48; /* height of top menu, ârt with login  */
+$heightmenu2 = 48; /* height of top menu, Ã¢rt with login  */
 $disableimages = 0;
 $maxwidthloginblock = 110;
 if (getDolGlobalInt('THEME_TOPMENU_DISABLE_IMAGE') == 1 || !empty($user->conf->MAIN_OPTIMIZEFORTEXTBROWSER)) {
@@ -3288,6 +3288,7 @@ div.mainmenu {
 	height: <?php echo($heightmenu - 22); ?>px;
 	margin-left: 0px;
 	min-width: 40px;
+	overflow: visible; /* para que el icono agrandado no se corte */
 }
 a.tmenuimage:focus, .mainmenu.topmenuimage:focus {
 	outline: none;
@@ -9020,7 +9021,49 @@ if (is_object($db)) {
 	user-select: none; /* Non-prefixed version, currently
 			  supported by Chrome, Edge, Opera and Firefox */
 }
+/* Iconos del menú superior: apagados, activos y efecto de aumento */
 
+/* Base: todos los iconos del top-menu */
+li.tmenu div.mainmenu.topmenuimage > span.fas,
+li.tmenu div.mainmenu.topmenuimage > span.far,
+li.tmenusel div.mainmenu.topmenuimage > span.fas,
+li.tmenusel div.mainmenu.topmenuimage > span.far {
+    display: inline-block;
+    transition: transform 0.15s ease-in-out,
+                color 0.15s ease-in-out,
+                opacity 0.15s ease-in-out;
+    transform-origin: center center;
+}
+
+/* No seleccionados: gris y algo apagados */
+li.tmenu div.mainmenu.topmenuimage > span.fas,
+li.tmenu div.mainmenu.topmenuimage > span.far {
+    color: #b8b3cf;   /* gris/lila apagado; ajusta al gusto */
+    opacity: 0.6;
+    transform: scale(1);  /* tamaño normal */
+}
+
+/* Seleccionado: color activo y tamaño un poco mayor */
+li.tmenusel div.mainmenu.topmenuimage > span.fas,
+li.tmenusel div.mainmenu.topmenuimage > span.far {
+    color: var(--colortextbackhmenu);  /* color de icono activo del tema */
+    opacity: 1;
+    transform: scale(1.35);
+}
+
+/* Hover: no seleccionados se comportan como seleccionados mientras haya hover */
+li.tmenu:hover div.mainmenu.topmenuimage > span.fas,
+li.tmenu:hover div.mainmenu.topmenuimage > span.far {
+    color: var(--colortextbackhmenu);
+    opacity: 1;
+    transform: scale(1.35);
+}
+
+/* Hover sobre el ya seleccionado (ligeramente más grande, opcional) */
+li.tmenusel:hover div.mainmenu.topmenuimage > span.fas,
+li.tmenusel:hover div.mainmenu.topmenuimage > span.far {
+    transform: scale(1.4);
+}
 /* Must be at end */
 div.flot-text .flot-tick-label .tickLabel, .fa-color-unset {
 	color: unset;

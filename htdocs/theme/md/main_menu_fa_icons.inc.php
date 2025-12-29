@@ -101,7 +101,11 @@ div.mainmenu.generic4::before {
 	margin-left: 30px;
 }
 
-.tmenu span.fas, .tmenu span.far {
+/* Iconos del menú superior (tema md) */
+.tmenu div.mainmenu.topmenuimage > span.fas,
+.tmenu div.mainmenu.topmenuimage > span.far,
+.tmenusel div.mainmenu.topmenuimage > span.fas,
+.tmenusel div.mainmenu.topmenuimage > span.far {
 	<?php
 	if (!getDolGlobalString('THEME_MENU_COLORLOGO')) {
 		echo "color: unset !important;";
@@ -109,9 +113,10 @@ div.mainmenu.generic4::before {
 	?>;
 	line-height: 28px;
 	text-align: center;
+	display: inline-block;
+	transition: transform 0.15s ease-in-out;
+	transform-origin: center center;
 }
-
-
 .em092 {
 	font-size: 0.92em;
 }
