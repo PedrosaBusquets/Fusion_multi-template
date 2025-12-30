@@ -1,46 +1,7 @@
-<?php
-/* Copyright (C) 2004-2017	Laurent Destailleur         <eldy@users.sourceforge.net>
- * Copyright (C) 2024       Fr√©d√©ric France             <frederic.france@free.fr>
- * Copyright (C) 2025		MDW							<mdeweerd@users.noreply.github.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+<?php if (!defined('ISLOADEDBYSTEELSHEET')) {
+	die('Must be call by steelsheet');
+} ?>
 
-/**
- *		\file       htdocs/theme/eldy/global.inc.php
- *		\brief      File for CSS style sheet Eldy
- */
-if (!defined('ISLOADEDBYSTEELSHEET')) {
-	die('Must be call by stylesheet');
-}
-/**
- * @var string $badgeDanger
- * @var string $badgeSuccess
- * @var string $badgeWarning
- * @var string $colorblind_deuteranopes_badgeDanger
- * @var string $colorblind_deuteranopes_badgeSuccess
- * @var string $topMenuFontSize
- */
-'
-@phan-var-force string $badgeDanger
-@phan-var-force string $badgeSuccess
-@phan-var-force string $badgeWarning
-@phan-var-force string $colorblind_deuteranopes_badgeDanger
-@phan-var-force string $colorblind_deuteranopes_badgeSuccess
-@phan-var-force string $topMenuFontSize
-';
-?>
 /* IDE Hack <style type="text/css"> */
 
 .mainmenu::before, .mainmenu span::before {
@@ -48,10 +9,12 @@ if (!defined('ISLOADEDBYSTEELSHEET')) {
 	font-style: normal;
 	font-variant: normal;
 	text-rendering: auto;
-	line-height: 28px;
+	line-height: 26px;
+	font-size: 1.3em;
 	-webkit-font-smoothing: antialiased;
 	text-align:center;
 	text-decoration:none;
+	transition: all 0.3s ease; /* AÒadido para suavizar el aumento de tamaÒo */
 }
 .mainmenu:not(.fab)::before, .mainmenu:not(.fab) span:not(.fab)::before {
 	font-family: "<?php echo getDolGlobalString('MAIN_FONTAWESOME_FAMILY', 'Font Awesome 5 Free'); ?>";
@@ -60,7 +23,6 @@ if (!defined('ISLOADEDBYSTEELSHEET')) {
 div.mainmenu.menu {
 	background-image: none;
 }
-
 
 div.mainmenu.generic1::before {
 	content: "\f249";
@@ -133,6 +95,7 @@ div.mainmenu.generic4::before {
 	border-bottom: solid 60px currentColor;
 	margin-left: 30px;
 }
+
 .tmenu span.fas, .tmenu span.far {
 	<?php
 	if (!getDolGlobalString('THEME_MENU_COLORLOGO')) {
@@ -143,14 +106,6 @@ div.mainmenu.generic4::before {
 	text-align: center;
 }
 
-.em092 {
-	font-size: 0.92em;
-}
-
-.em088 {
-	font-size: 0.88em;
-}
-
-.em080 {
-	font-size: 0.80em;
-}
+.em092 { font-size: 0.92em; }
+.em088 { font-size: 0.88em; }
+.em080 { font-size: 0.80em; }
