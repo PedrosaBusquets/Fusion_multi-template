@@ -1,19 +1,6 @@
 <?php
 /* Copyright (C) 2024-2025  Frédéric France         <frederic.france@free.fr>
  * Copyright (C) 2025		MDW						<mdeweerd@users.noreply.github.com>
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 if (!defined('ISLOADEDBYSTEELSHEET')) {
 	die('Must be call by steelsheet');
@@ -22,31 +9,34 @@ if (!defined('ISLOADEDBYSTEELSHEET')) {
  * @var Conf $conf
  * @var User $user
  *
- * @var string $butactionbg
- * @var string $colortextlink
  * @var int $dol_optimize_smallscreen
+ * @var string $colortextlink
+ * @var string $butactionbg
  * @var string $textbutaction
- * @var int<0,max> $nbtopmenuentries
- * @var string $right
+ * @var string $fontlist
+ * @var string $fontsize
  * @var string $left
+ * @var string $right
+ * @var int<0,max> $nbtopmenuentries
  */
-
 '
 @phan-var-force string $butactionbg
 @phan-var-force string $colortextlink
-@phan-var-force int<0,1> $dol_optimize_smallscreen
+@phan-var-force int $dol_optimize_smallscreen
 @phan-var-force string $fontlist
+@phan-var-force string $fontsize
 @phan-var-force string $left
-@phan-var-force int<0,max> $nbtopmenuentries
+@phan-var-force int $nbtopmenuentries
 @phan-var-force string $right
 @phan-var-force string $textbutaction
+@phan-var-force int<0,max> $nbtopmenuentries
 ';
 ?>
 
 /* IDE Hack <style type="text/css"> */
 
 :root {
-			--btncolortext: rgb(<?php print $colortextlink; ?>);
+			--btncolortext:rgb(<?php print $colortextlink; ?>);
 			--btncolorbg: #fbfbfb;
 			--btncolorborderhover: none;
 			--btncolorborder: #FFF;
@@ -79,14 +69,11 @@ if (getDolGlobalString('THEME_DARKMODEENABLED')) {
 }
 ?>
 
-
 /* ============================================================================== */
 /* Buttons for actions                                                            */
 /* ============================================================================== */
 
-/*div.divButAction {
-	margin-bottom: 1.4em;
-}*/
+
 div.tabsAction > a.butAction, div.tabsAction > a.butActionRefused, div.tabsAction > a.butActionDelete,
 div.tabsAction > span.butAction, div.tabsAction > span.butActionRefused, div.tabsAction > span.butActionDelete,
 div.tabsAction > div.divButAction > span.butAction,
@@ -98,10 +85,6 @@ div.tabsAction > div.divButAction > a.butActionRefused {
 	margin-bottom: 1.4em !important;
 	margin-right: 0px !important;
 }
-.divButAction {
-	padding: 0 !important;
-	margin: 0 !important;
-}
 div.tabsActionNoBottom > a.butAction, div.tabsActionNoBottom > a.butActionRefused {
 	margin-bottom: 0 !important;
 }
@@ -109,9 +92,7 @@ div.tabsActionNoBottom > a.butAction, div.tabsActionNoBottom > a.butActionRefuse
 span.butAction, span.butActionDelete {
 	cursor: pointer;
 }
-.paginationafterarrows .butAction {
-	font-size: 0.9em;
-}
+
 .butAction {
 	background: var(--butactionbg);
 	color: var(--textbutaction) !important;
@@ -123,20 +104,19 @@ span.butAction, span.butActionDelete {
 :not(.center) > .butActionRefused:last-child, :not(.center) > .butAction:last-child, :not(.center) > .butActionDelete:last-child {
 	margin-<?php echo $right; ?>: 0px !important;
 }
-.butActionRefused, .butAction, .butAction:link, .butAction:visited, .butAction:hover, .butAction:active, .butActionDelete, .butActionDelete:link, .butActionDelete:visited, .butActionDelete:hover, .butActionDelete:active,
-.divButAction
- {
+.butActionRefused, .butAction, .butAction:link, .butAction:visited, .butAction:hover, .butAction:active, .butActionDelete, .butActionDelete:link, .butActionDelete:visited, .butActionDelete:hover, .butActionDelete:active {
 	text-decoration: none;
 	text-transform: uppercase;
 	font-weight: bold;
+	line-height: 1.8em;
 
-	margin: 0em <?php echo($dol_optimize_smallscreen ? '0.6' : '1'); ?>em;
+	margin: 0em <?php echo($dol_optimize_smallscreen ? '0.6' : '0.9'); ?>em;
 	padding: 0.6em <?php echo($dol_optimize_smallscreen ? '0.6' : '0.7'); ?>em;
+	font-family: <?php print $fontlist ?>;
 	display: inline-block;
 	text-align: center;
 	cursor: pointer;
 	color: #444;
-	border: 1px solid transparent;	/* So for buttonRefused with a border, it will not have any flash effect */
 
 	/* border: 1px solid #aaa; */
 	/* border-color: rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.25); */
@@ -159,6 +139,47 @@ span.butAction, span.butActionDelete {
 	cursor: pointer;
 }
 
+.button {
+	border-color: rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.25);
+	display: inline-block;
+	padding: 0.4em <?php echo($dol_optimize_smallscreen ? '0.4' : '0.7'); ?>em;
+	margin: 0em <?php echo($dol_optimize_smallscreen ? '0.7' : '0.9'); ?>em;
+	line-height: 20px;
+	text-align: center;
+	vertical-align: middle;
+	cursor: pointer;
+	color: #333333 !important;
+	text-decoration: none !important;
+	text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
+	background-color: #f5f5f5;
+	background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+	background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+	background-repeat: repeat-x;
+	border-color: #e6e6e6 #e6e6e6 #bfbfbf;
+	border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+	border: 1px solid #bbbbbb;
+	border-bottom-color: #a2a2a2;
+	border-radius: 2px;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+.butActionNew, .butActionNewRefused, .butActionNew:link, .butActionNew:visited, .butActionNew:hover, .butActionNew:active {
+	text-decoration: none;
+	/* border-color: rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.25); */
+	display: inline-block;
+	padding: 0.2em <?php echo($dol_optimize_smallscreen ? '0.4' : '0.7'); ?>em;
+	margin: 0em <?php echo($dol_optimize_smallscreen ? '0.7' : '0.9'); ?>em;
+	line-height: 20px;
+	/* text-align: center;  New button are on right of screen */
+	vertical-align: middle;
+	cursor: pointer;
+	border-radius: 2px;
+}
+a.butActionNew>span.fa-plus-circle { padding-left: 6px; font-size: 1.5em; }
+a.butActionNewRefused>span.fa-plus-circle { padding-left: 6px; font-size: 1.5em; }
+
 .tableforfieldcreate a.butActionNew>span.fa-plus-circle, .tableforfieldcreate a.butActionNew>span.fa-plus-circle:hover,
 .tableforfieldedit a.butActionNew>span.fa-plus-circle, .tableforfieldedit a.butActionNew>span.fa-plus-circle:hover,
 span.butActionNew>span.fa-plus-circle, span.butActionNew>span.fa-plus-circle:hover,
@@ -173,6 +194,38 @@ span.butActionNewRefused>span.fa-list-alt, span.butActionNewRefused>span.fa-list
 	padding-left: 0px;
 }
 
+.button {
+	color: #ffffff !important;
+	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+	background-color: #006dcc;
+	background-image: -moz-linear-gradient(top, #0088cc, #0044cc);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#0088cc), to(#0044cc));
+	background-image: -webkit-linear-gradient(top, #0088cc, #0044cc);
+	background-image: -o-linear-gradient(top, #0088cc, #0044cc);
+	background-image: linear-gradient(to bottom, #0088cc, #0044cc);
+	background-repeat: repeat-x;
+	border-color: #0044cc #0044cc #002a80;
+	border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+}
+.button:disabled {
+	color: #666 !important;
+	text-shadow: none;
+	border-color: #555;
+	cursor: not-allowed;
+
+	background-color: #f5f5f5;
+	background-image: -moz-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ffffff), to(#e6e6e6));
+	background-image: -webkit-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: -o-linear-gradient(top, #ffffff, #e6e6e6);
+	background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+	background-repeat: repeat-x
+}
+
+button.ui-button {
+	padding-top: 5px;
+}
+
 a.butActionNew>span.fa, a.butActionNew>span.fa:hover,
 span.butActionNew>span.fa, span.butActionNew>span.fa:hover,
 a.butActionNewRefused>span.fa, a.butActionNewRefused>span.fa:hover,
@@ -181,12 +234,11 @@ span.butActionNewRefused>span.fa, span.butActionNewRefused>span.fa:hover
 	padding-<?php echo $left; ?>: 6px;
 	font-size: 1.5em;
 	border: none;
-	box-shadow: none; webkit-box-shadow: none;
+	box-shadow: none;
 }
 
-.butAction:hover, .dropdown-holder.open > .butAction   {
-	/** TODO use css var with hsl from --colortextlink to allow create darken or lighten color */
-	box-shadow: 0px 0px 6px rgba(50,50,50,0.4), inset 0px 0px 200px rgba(0,0,0,0.3); /* fix hover feedback : use "inset" background to easily darken background */
+.butAction:hover   {
+	box-shadow: 0px 0px 6px 1px rgba(50, 50, 50, 0.4), inset 0px 0px 200px rgba(60,60,60,0.1);
 }
 .butActionNew:hover   {
 	text-decoration: underline;
@@ -194,27 +246,15 @@ span.butActionNewRefused>span.fa, span.butActionNewRefused>span.fa:hover
 }
 
 .butActionDelete, .butActionDelete:link, .butActionDelete:visited, .butActionDelete:hover, .butActionDelete:active, .buttonDelete {
-	background: var(--butactiondeletebg) !important;
+	background: var(--butactiondeletebg);
 	/* border: 1px solid #633; */
-	color: #633 !important;
+	color: #633;
+	/* vertical-align: middle; */
 }
 
 .butActionDelete:hover {
 	box-shadow: 0px 0px 6px 1px rgba(50, 50, 50, 0.4), 0px 0px 0px rgba(60,60,60,0.1);
 }
-
-/*
-.butActionDelete#action-delete::before {
-	content: "\f1f8";
-	font-family: "<?php echo getDolGlobalString('MAIN_FONTAWESOME_FAMILY', 'Font Awesome 5 Free'); ?>";
-	font-weight: 600;
-	width: 20px;
-	visibility: visible;
-}
-.butActionDelete#action-delete span.textbutton {
-	display: none;
-}
-*/
 
 .butActionRefused {
 	text-decoration: none !important;
@@ -223,16 +263,18 @@ span.butActionNewRefused>span.fa, span.butActionNewRefused>span.fa:hover
 
 	white-space: nowrap !important;
 	cursor: not-allowed !important;
+	margin: 0em <?php echo($dol_optimize_smallscreen ? '0.6' : '0.9'); ?>em;
+	padding: 0.6em <?php echo($dol_optimize_smallscreen ? '0.6' : '0.7'); ?>em;
 	font-family: <?php print $fontlist ?> !important;
 	display: inline-block;
 	text-align: center;
 	cursor: pointer;
-	box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
 	color: #999 !important;
 
 	border: 1px solid #ccc;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
 }
 .butActionNewRefused, .butActionNewRefused:link, .butActionNewRefused:visited, .butActionNewRefused:hover, .butActionNewRefused:active {
 	text-decoration: none !important;
@@ -262,11 +304,18 @@ span.butActionNewRefused>span.fa, span.butActionNewRefused>span.fa:hover
 TITLE BUTTON
  */
 
+div.pagination li:first-child a.btnTitle, div.pagination li.paginationafterarrows a.btnTitle,
+table.table-fiche-title tr.titre td.col-center div.nowraponall a.btnTitle,
+table.table-fiche-title tr.titre td.col-right a.btnTitle {
+	margin-<?php echo $left; ?>: 10px;
+}
+
 .btnTitle, a.btnTitle {
 	display: inline-block;
-	padding: 6px;
+	padding: 4px 12px;
+	font-size: 14px;
 	font-weight: 400;
-	/* line-height: 1; */
+	line-height: 1.4;
 	text-align: center;
 	white-space: nowrap;
 	vertical-align: middle;
@@ -277,18 +326,20 @@ TITLE BUTTON
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-	box-shadow: var(--btncolorbg);
+	box-shadow: none;
 	text-decoration: none;
 	position: relative;
-	/* margin: 0 0 0 8px; */
-	min-width: 60px;
+	margin: 0 0 0 10px;
 	text-align: center;
 	color: var(--btncolortext);
 	border: none;
 	font-size: 12px;
 	font-weight: 300;
-	/* background-color: var(--btncolorbg); */
-	border: 1px solid var(--btncolorborder);
+	/* background-color: #fbfbfb; */
+}
+/* *:not(.paginationafterarrows) > .btnTitle, *:not(.paginationafterarrows) > a.btnTitle { */
+.btnTitle, a.btnTitle {
+	min-width: 60px;
 }
 
 a.btnTitle.btnTitleSelected {
@@ -305,36 +356,32 @@ a.btnTitle.btnTitleSelected {
 }
 
 .btnTitle:hover, a.btnTitle:hover {
-	border: 1px solid #bbb;
 	border-radius: 3px;
 	position: relative;
+	margin: 0 0 0 10px;
 	text-align: center;
+	color: #000;
+	background-color: #eee;
 	font-size: 12px;
 	text-decoration: none;
 	box-shadow: none;
 }
-/* The buttonplus is growing on hover (don't know why). This is to avoid to have the cell growing too */
-.btnTitlePlus:hover {
-	/* max-width: 24px; */ /* max width is a problem when the button has a text under */
-	max-height: 42px;
-}
 
 .btnTitle.refused, a.btnTitle.refused, .btnTitle.refused:hover, a.btnTitle.refused:hover {
-	color: #8a8a8a;
-	cursor: not-allowed;
-	background-color: #fbfbfb;
-	background: repeating-linear-gradient( 45deg, #ffffff, #f1f1f1 4px, #f1f1f1 4px, #f1f1f1 4px );
+		color: #8a8a8a;
+		cursor: not-allowed;
+		background-color: #fbfbfb;
+		background: repeating-linear-gradient( 45deg, #ffffff, #f1f1f1 4px, #f1f1f1 4px, #f1f1f1 4px );
 }
 
-.btnTitle:hover .btnTitle-label {
-	color: var(--btncolorborderhover);
+.btnTitle:hover .btnTitle-label{
+	color:var(--btncolorborderhover);
 }
-.btnTitle.reposition:not(.btnTitleSelected) {
-	background-color: unset;
-	border: unset;
+div.pagination .btnTitle:hover .btnTitle-label{
+	color: rgb(<?php print $colortextlink; ?>);
 }
 
-.btnTitle.refused .btnTitle-label, .btnTitle.refused:hover .btnTitle-label {
+.btnTitle.refused .btnTitle-label, .btnTitle.refused:hover .btnTitle-label{
 	color: #8a8a8a;
 }
 
@@ -343,27 +390,32 @@ a.btnTitle.btnTitleSelected {
 	display: block;
 }
 
-div.pagination li:first-child a.btnTitle, div.pagination li.paginationafterarrows a.btnTitle,
-table.table-fiche-title tr.toptitle td.col-center div.nowraponall a.btnTitle,
-table.table-fiche-title tr.titre td.col-center div.nowraponall a.btnTitle,
-table.table-fiche-title tr.toptitle td.col-right a.btnTitle,
-table.table-fiche-title tr.titre td.col-right a.btnTitle {
-	margin-<?php echo $left; ?>: 10px;
+.paginationafterarrows a.btnTitlePlus, .titre_right a.btnTitlePlus {
+	/* border: 1px solid var(--btncolorborder); */
+	border: unset;
+	background-color: unset;
+}
+.paginationafterarrows a.btnTitlePlus:hover, .titre_right a.btnTitlePlus:hover {
+	border-color: #ddd;
 }
 
-.button-title-separator{
-	display: inline-block;
-	clear: both;
-	width: 20px;
+/* The buttonplus is growing on hover (don't know why). This is to avoid to have the cell growing too */
+.btnTitlePlus:hover {
+	/* max-width: 24px; */ /* max width is a problem when the button has a text under */
+	max-height: 42px;
 }
 
-.imgforviewmode {
-	color: #aaa;
+/* nboftopmenuentries = <?php echo $nbtopmenuentries ?> ?> */
+/* rule to reduce top menu - 1st reduction: Reduce width of top menu icons */
+@media only screen and (max-width: <?php echo getDolGlobalString('THEME_ELDY_WITDHOFFSET_FOR_REDUC1', round($nbtopmenuentries * 90, 0) + 340); ?>px)	/* reduction 1 */
+{
+	.btnTitle, a.btnTitle {
+		min-width: 40px;
+	}
 }
-
 
 /* rule to reduce top menu - 2nd reduction: Reduce width of top menu icons again */
-@media only screen and (max-width: <?php echo !getDolGlobalString('THEME_ELDY_WITDHOFFSET_FOR_REDUC2') ? round($nbtopmenuentries * 69, 0) + 130 : $conf->global->THEME_ELDY_WITDHOFFSET_FOR_REDUC2; ?>px)	/* reduction 2 */
+@media only screen and (max-width: <?php echo !getDolGlobalString('THEME_ELDY_WITDHOFFSET_FOR_REDUC2') ? round($nbtopmenuentries * 69, 0) + 130 : getDolGlobalInt('THEME_ELDY_WITDHOFFSET_FOR_REDUC2'); ?>px)	/* reduction 2 */
 {
 	.butAction, .butActionRefused, .butActionDelete {
 		font-size: 0.95em;
@@ -371,7 +423,7 @@ table.table-fiche-title tr.titre td.col-right a.btnTitle {
 }
 
 /* rule to reduce top menu - 3rd reduction: The menu for user is on left */
-@media only screen and (max-width: <?php echo !getDolGlobalString('THEME_ELDY_WITDHOFFSET_FOR_REDUC3') ? round($nbtopmenuentries * 47, 0) + 130 : $conf->global->THEME_ELDY_WITDHOFFSET_FOR_REDUC3; ?>px)	/* reduction 3 */
+@media only screen and (max-width: <?php echo !getDolGlobalString('THEME_ELDY_WITDHOFFSET_FOR_REDUC3') ? round($nbtopmenuentries * 47, 0) + 130 : getDolGlobalInt('THEME_ELDY_WITDHOFFSET_FOR_REDUC3'); ?>px)	/* reduction 3 */
 {
 	.butAction, .butActionRefused, .butActionDelete {
 		font-size: 0.9em;
@@ -379,7 +431,6 @@ table.table-fiche-title tr.titre td.col-right a.btnTitle {
 }
 
 /* smartphone */
-
 @media only screen and (max-width: 767px)
 {
 	.butAction, .butActionRefused, .butActionDelete {
@@ -406,7 +457,7 @@ table.table-fiche-title tr.titre td.col-right a.btnTitle {
 
 
 /*
- * BTN LINK (used with <a/> tag in general but not with <button/>)
+ * BTN LINK
  */
 
 .btn-link{
@@ -422,6 +473,7 @@ table.table-fiche-title tr.titre td.col-right a.btnTitle {
 	background-color: #ddd;
 	border: 1px solid #ddd;
 }
+
 
 
 /*

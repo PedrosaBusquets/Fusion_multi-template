@@ -22,7 +22,7 @@
  */
 
 /**
- *		\file       htdocs/theme/eldy/manifest.json.php
+ *		\file       htdocs/theme/md/manifest.json.php
  *		\brief      File for The Web App (PWA)
  */
 
@@ -55,11 +55,9 @@ if (!defined('NOSESSION')) {
 }
 
 require_once __DIR__.'/../../main.inc.php';
-
 /**
  * @var Conf $conf
  */
-
 top_httphead('text/json');
 // Important: Following code is to avoid page request by browser and PHP CPU at each Dolibarr page access.
 if (empty($dolibarr_nocache)) {
@@ -81,7 +79,6 @@ if (getDolGlobalString('MAIN_APPLICATION_TITLE')) {
 }
 $manifest->short_name = $manifest->name;
 
-
 $manifest->theme_color = getDolGlobalString('MAIN_MANIFEST_APPLI_THEME_COLOR', getDolGlobalString('THEME_ELDY_TOPMENU_BACK1', '#F05F40'));
 if (!preg_match('/#[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]$/', $manifest->theme_color)) {
 	include_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
@@ -101,7 +98,7 @@ $manifest->id = constant('DOL_MAIN_URL_ROOT');
 if (getDolGlobalString('MAIN_MANIFEST_APPLI_LOGO_URL')) {
 	$icon = new stdClass();
 	$icon->src = getDolGlobalString('MAIN_MANIFEST_APPLI_LOGO_URL');
-	if ($conf->global->MAIN_MANIFEST_APPLI_LOGO_URL_SIZE) {
+	if (getDolGlobalString('MAIN_MANIFEST_APPLI_LOGO_URL_SIZE')) {
 		$icon->sizes = getDolGlobalString('MAIN_MANIFEST_APPLI_LOGO_URL_SIZE') . "x" . getDolGlobalString('MAIN_MANIFEST_APPLI_LOGO_URL_SIZE');
 	} else {
 		$icon->sizes = "512x512";

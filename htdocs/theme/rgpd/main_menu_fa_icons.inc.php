@@ -14,7 +14,6 @@
 	-webkit-font-smoothing: antialiased;
 	text-align:center;
 	text-decoration:none;
-	transition: all 0.3s ease; /* Añadido para suavizar el aumento de tamaño */
 }
 .mainmenu:not(.fab)::before, .mainmenu:not(.fab) span:not(.fab)::before {
 	font-family: "<?php echo getDolGlobalString('MAIN_FONTAWESOME_FAMILY', 'Font Awesome 5 Free'); ?>";
@@ -23,6 +22,12 @@
 div.mainmenu.menu {
 	background-image: none;
 }
+
+/*
+div.mainmenu.menu::before {
+	content: "\f0c9";
+}
+*/
 
 div.mainmenu.generic1::before {
 	content: "\f249";
@@ -106,6 +111,15 @@ div.mainmenu.generic4::before {
 	text-align: center;
 }
 
-.em092 { font-size: 0.92em; }
-.em088 { font-size: 0.88em; }
-.em080 { font-size: 0.80em; }
+
+.em092 {
+	font-size: 0.92em;
+}
+
+.em088 {
+	font-size: 0.88em;
+}
+
+.em080 {
+	font-size: 0.80em;
+}

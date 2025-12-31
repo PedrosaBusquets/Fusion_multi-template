@@ -1,6 +1,6 @@
 <?php
 /* Copyright (C) 2024-2025	MDW						<mdeweerd@users.noreply.github.com>
- * Copyright (C) 2024       Frédéric France         <frederic.france@free.fr>
+ * Copyright (C) 2025       Frédéric France         <frederic.france@free.fr>
  */
 if (!defined('ISLOADEDBYSTEELSHEET')) {
 	die('Must be called by steelsheet');
@@ -53,7 +53,7 @@ if (!defined('ISLOADEDBYSTEELSHEET')) {
 }
 
 .badge-status {
-	font-size: 0.95em;
+	font-size: 1em;
 	padding: .19em .35em;			/* more than 0.19 generate a change into height of lines */
 }
 .tabBar .arearef .statusref .badge-status, .tabBar .arearefnobottom .statusref .badge-status {
@@ -79,7 +79,7 @@ if (!defined('ISLOADEDBYSTEELSHEET')) {
 	padding: 0;
 	border-radius: 50%;
 	padding: 0.45em;
-	vertical-align: text-top;
+	vertical-align: unset;
 }
 
 a.badge:focus, a.badge:hover {
@@ -145,7 +145,7 @@ a.badge-success:focus, a.badge-success:hover {
 /* DANGER */
 .badge-danger {
 	color: #fff !important;
-	background-color: <?php print $badgeDanger; ?>;
+	background-color:  <?php print $badgeDanger; ?>;
 }
 a.badge-danger.focus, a.badge-danger:focus {
 	outline: 0;
@@ -247,14 +247,13 @@ for ($i = 0; $i <= 10; $i++) {
 _createStatusBadgeCss('1b', '', "STATUS1b");
 _createStatusBadgeCss('4b', '', "STATUS4b");
 
-
 /**
  * Create status badge
  *
- * @param string $statusName 			name of status ('1', '2', '4b', ...)
- * @param string $statusVarNamePrefix 	a prefix for var ${$statusVarNamePrefix.'badgeStatus'.$statusName}
- * @param string $commentLabel 			a comment label
- * @param string $cssPrefix 			a css prefix
+ * @param string $statusName name of status
+ * @param string $statusVarNamePrefix a prefix for var ${$statusVarNamePrefix.'badgeStatus'.$statusName}
+ * @param string $commentLabel a comment label
+ * @param string $cssPrefix a css prefix
  * @return void
  *
  * @phan-suppress PhanRedefineFunction
@@ -268,6 +267,7 @@ function _createStatusBadgeCss($statusName, $statusVarNamePrefix = '', $commentL
 
 		$thisBadgeBackgroundColor = $thisBadgeBorderColor = ${$statusVarNamePrefix.'badgeStatus'.$statusName};
 
+
 		$TBadgeBorderOnly = array('0', '1b', '3', '4b', '5', '7', '10');
 		$thisBadgeTextColor = colorIsLight(${$statusVarNamePrefix.'badgeStatus'.$statusName}) ? '#212529' : '#ffffff';
 
@@ -277,11 +277,14 @@ function _createStatusBadgeCss($statusName, $statusVarNamePrefix = '', $commentL
 
 		if (in_array((string) $statusName, $TBadgeBorderOnly)) {
 			$thisBadgeTextColor = '#9c850b';
-			$thisBadgeBackgroundColor = "hsl(0, 0%, 0%, 0)";
+			$thisBadgeBackgroundColor = "#fff";
 		}
 
-		if (in_array((string) $statusName, array('4b', '7'))) {
+		if (in_array((string) $statusName, array('4b'))) {
 			$thisBadgeTextColor = '#25a580';
+		}
+		if (in_array((string) $statusName, array('7'))) {
+			$thisBadgeTextColor = '#277d1e';
 		}
 		if (in_array((string) $statusName, array('0', '5', '9', '10'))) {
 			$thisBadgeTextColor = '#999999';

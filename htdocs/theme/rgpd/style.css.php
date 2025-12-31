@@ -3218,8 +3218,6 @@ ul.tmenu li {
 	background-image: -webkit-gradient( linear, left top, left bottom, color-stop(0, rgba(255,255,255,.3)), color-stop(1, rgba(0,0,0,.3)) );
 	*/
 }
-
-/*  DESDE   */
 li.tmenu, li.tmenusel {
 	<?php print $minwidthtmenu ? 'min-width: '.$minwidthtmenu.'px;' : ''; ?>
 	text-align: center;
@@ -3237,43 +3235,7 @@ li.tmenu, li.tmenusel {
 	display: block;
 	margin: 0px 0px 0px 0px;
 	font-weight: normal;
-	transition: all 0.2s ease-in-out; /* Suaviza la animación */
 }
-
-/* --- ICONOS Y TEXTO: ESTADO NORMAL (Gris y tamaño normal) --- */
-li.tmenu .mainmenu::before, 
-li.tmenu .mainmenu span::before {
-	color: #888 !important;
-	font-size: 1.3em !important;
-	transition: all 0.2s ease-in-out;
-}
-li.tmenu .mainmenuaspan {
-	color: #888 !important;
-	transition: all 0.2s ease-in-out;
-}
-
-/* --- ICONOS Y TEXTO: ESTADO SELECCIONADO O HOVER (Blanco y más grande) --- */
-li.tmenusel, li.tmenu:hover {
-	opacity: 1 !important;
-}
-
-li.tmenusel .mainmenu::before, 
-li.tmenusel .mainmenu span::before{
-	color: #fff !important;
-}
-li.tmenu:hover .mainmenu::before, 
-li.tmenu:hover .mainmenu span::before {
-	color: #fff !important;
-	font-size: 1.7em !important; /* Aumenta el tamaño del icono */
-}
-
-li.tmenusel .mainmenuaspan,
-li.tmenu:hover .mainmenuaspan {
-	color: #fff !important;
-	font-weight: bold;
-	font-size: 1.1em; /* Aumenta ligeramente el texto si lo deseas */
-}
-/*HASTA*/
 li.tmenu:hover {
 	opacity: .50; /* show only a slight shadow */
 }
